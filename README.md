@@ -57,7 +57,7 @@ the email.
 
 ## Architecture
 
-### System overview
+## System Overview
 
 ```mermaid
 flowchart LR
@@ -67,7 +67,7 @@ flowchart LR
     S --> RET[RAG Retrieval]
     RET <--> P[(Pinecone)]
     S <--> G[Gemini API]
-    API --> M[/metrics]
+    API --> M["/metrics"]
     PR[Prometheus] --> M
     GR[Grafana] --> PR
 ```
