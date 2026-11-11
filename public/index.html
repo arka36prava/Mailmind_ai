@@ -1,0 +1,696 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>MailMind — RAG Email Intelligence</title>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #111a2e;
+      --line: #26334d;
+      --text: #edf3ff;
+      --muted: #91a0ba;
+      --accent: #8ee3c2;
+      --accent2: #72b7ff;
+      --danger: #ff8c9b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse at 15% 0%, #1c3150 0, transparent 38%), var(--bg);
+      color: var(--text);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    .shell { max-width: 1180px; margin: auto; padding: 34px 22px 60px; }
+    .top, .brand, .panel-head, .result-top, .quality-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .top { margin-bottom: 34px; }
+    .brand { justify-content: flex-start; }
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: grid;
+      place-items: center;
+      color: #071321;
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .brand h1 { font-size: 17px; margin: 0; }
+    .brand p, .sub { color: var(--muted); font-size: 12px; margin: 1px 0 0; }
+
+    .status, .tag, .quality-status {
+      font-size: 11px;
+      color: var(--accent);
+      border: 1px solid #315b55;
+      border-radius: 99px;
+      padding: 6px 10px;
+      background: #102b2a;
+    }
+
+    .hero { margin-bottom: 25px; }
+    .eyebrow {
+      color: var(--accent);
+      font-size: 11px;
+      letter-spacing: 1.8px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .hero h2 {
+      font-size: clamp(28px, 4vw, 43px);
+      line-height: 1.12;
+      margin: 9px 0;
+    }
+
+    .hero p { max-width: 700px; color: var(--muted); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, .82fr) minmax(0, 1.35fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(21,31,53,.97), rgba(15,24,42,.97));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 18px 60px #0002;
+    }
+
+    .panel-head { margin-bottom: 19px; }
+    .panel h3 { font-size: 15px; margin: 0; }
+
+    .field { margin-bottom: 15px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 7px;
+      font-weight: 650;
+    }
+
+    .field input, .field textarea, .field select {
+      width: 100%;
+      border: 1px solid #34435f;
+      border-radius: 10px;
+      background: #0c1426;
+      color: var(--text);
+      padding: 12px 13px;
+      font: inherit;
+    }
+
+    .field textarea { min-height: 112px; resize: vertical; }
+
+    .generate {
+      width: 100%;
+      border: 0;
+      border-radius: 11px;
+      background: linear-gradient(100deg, var(--accent), #a8e9d7);
+      color: #071a1b;
+      font-weight: 850;
+      padding: 13px;
+      cursor: pointer;
+    }
+
+    .generate:disabled { opacity: .55; cursor: wait; }
+
+    .hint, .quality-note {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .output-empty {
+      min-height: 285px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .spark { font-size: 30px; }
+    .result { display: none; }
+    .result.show { display: block; }
+
+    .email-preview {
+      background: #f6f8fc;
+      color: #172033;
+      border-radius: 13px;
+      padding: 22px;
+      margin-bottom: 15px;
+    }
+
+    .email-preview .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #71809a;
+      font-weight: 800;
+    }
+
+    .email-preview h4 { font-size: 17px; margin: 4px 0 17px; }
+    .email-preview p { white-space: pre-wrap; margin: 0; line-height: 1.75; }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 19px; }
+
+    .small-btn {
+      border: 1px solid #394965;
+      background: #18243a;
+      color: var(--text);
+      padding: 8px 11px;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      margin: 18px 0 9px;
+    }
+
+    .summary, .source, .metric, .quality-stat, .quality-check {
+      background: #101a2c;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px;
+    }
+
+    .summary { font-size: 12px; color: #b6c4d9; }
+    .sources { display: grid; gap: 8px; }
+    .source-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+    .source small { display: block; color: var(--muted); font-size: 11px; }
+    .score { color: var(--accent); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .metric b, .quality-stat b { display: block; font-size: 19px; }
+    .metric span, .quality-stat span { font-size: 10px; color: var(--muted); }
+
+    /* Quality dashboard */
+    .quality-panel {
+      margin-top: 18px;
+      border: 1px solid #315b55;
+      background: linear-gradient(180deg, #102b2a66, #101a2c);
+      border-radius: 13px;
+      padding: 15px;
+    }
+
+    .quality-head strong { font-size: 13px; }
+
+    .quality-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+      margin: 14px 0;
+    }
+
+    .quality-stat b { font-size: 23px; }
+
+    .quality-score { margin: 13px 0; }
+
+    .quality-score-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .quality-track {
+      height: 8px;
+      border-radius: 99px;
+      background: #26334d;
+      overflow: hidden;
+    }
+
+    .quality-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0;
+      transition: width .35s ease;
+    }
+
+    .quality-checks {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 13px;
+    }
+
+    .quality-check {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .quality-check span:last-child {
+      color: var(--accent);
+      text-align: right;
+    }
+
+    .quality-note { line-height: 1.5; margin-top: 12px; }
+
+    .quality-unavailable {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 12px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+    }
+
+    .loader, .error { display: none; font-size: 12px; margin-top: 12px; }
+    .loader.show { display: block; color: var(--accent); }
+    .error.show { display: block; color: var(--danger); }
+
+    .footer { text-align: center; color: #687894; font-size: 11px; margin-top: 24px; }
+
+    @media(max-width:800px) {
+      .layout { grid-template-columns: 1fr; }
+      .shell { padding: 23px 14px 45px; }
+      .panel { padding: 17px; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metric:last-child { grid-column: span 2; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="shell">
+
+    <header class="top">
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <h1>MailMind <span style="color:var(--accent)">AI</span></h1>
+          <p>Context-aware email intelligence</p>
+        </div>
+      </div>
+      <div class="status">● RAG pipeline enabled</div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">AI writing workspace</div>
+      <h2>Write better emails.<br><span style="color:var(--accent)">Grounded in context.</span></h2>
+      <p>Describe your goal, choose a tone, and let retrieval-augmented generation create a concise email using relevant communication guidelines.</p>
+    </section>
+
+    <section class="layout">
+
+      <!-- Input form -->
+      <form class="panel" id="emailForm">
+        <div class="panel-head">
+          <h3>Compose an email</h3>
+          <span class="sub">01 / INPUT</span>
+        </div>
+
+        <div class="field">
+          <label for="purpose">What do you want to communicate?</label>
+          <textarea id="purpose" maxlength="1000" required placeholder="e.g. Request an update about my job application..."></textarea>
+        </div>
+
+        <div class="field">
+          <label for="recipient">Recipient name</label>
+          <input id="recipient" maxlength="100" required placeholder="e.g. Rahul" />
+        </div>
+
+        <div class="field">
+          <label for="tone">Choose a tone</label>
+          <select id="tone">
+            <option>Professional and polite</option>
+            <option>Friendly and warm</option>
+            <option>Formal</option>
+            <option>Apologetic and empathetic</option>
+            <option>Persuasive but respectful</option>
+            <option>Concise and direct</option>
+          </select>
+        </div>
+
+        <button class="generate" id="generateBtn" type="submit">✦ Generate with AI</button>
+        <div class="loader" id="loader">Building context → retrieving knowledge → generating email → checking quality…</div>
+        <div class="error" id="error"></div>
+        <p class="hint">Your inputs are embedded and matched against the communication knowledge base before generation.</p>
+      </form>
+
+      <!-- Output -->
+      <section class="panel" aria-live="polite">
+        <div class="panel-head">
+          <h3>AI response channel</h3>
+          <span class="sub">02 / OUTPUT</span>
+        </div>
+
+        <div class="output-empty" id="empty">
+          <div>
+            <div class="spark">✧</div>
+            <strong>Your generated email will appear here</strong>
+            <p class="sub">The output includes the email, retrieved references, and execution metrics.</p>
+          </div>
+        </div>
+
+        <div class="result" id="result">
+          <div class="result-top">
+            <span class="tag">✓ Generated successfully</span>
+            <span class="sub" id="modelLabel">Gemini</span>
+          </div>
+
+          <div class="email-preview">
+            <div class="label">Subject</div>
+            <h4 id="subject"></h4>
+            <div class="label">Email body</div>
+            <p id="body"></p>
+          </div>
+
+          <div class="actions">
+            <button class="small-btn" id="copyBtn" type="button">Copy email</button>
+            <button class="small-btn" id="copySubjectBtn" type="button">Copy subject</button>
+            <button class="small-btn" id="regenerateBtn" type="button">↻ Regenerate</button>
+          </div>
+
+          <div class="section-title">Why this draft is relevant</div>
+          <div class="summary" id="contextSummary"></div>
+
+          <div class="section-title">Retrieved knowledge · Top 3</div>
+          <div class="sources" id="sources"></div>
+
+          <div class="section-title">Pipeline performance</div>
+          <div class="metrics">
+            <div class="metric"><b id="retrievalMetric">—</b><span>Retrieval time</span></div>
+            <div class="metric"><b id="generationMetric">—</b><span>LLM generation</span></div>
+            <div class="metric"><b id="totalMetric">—</b><span>Total AI time</span></div>
+          </div>
+
+          <!-- Quality dashboard -->
+          <div class="section-title">Email quality analysis</div>
+
+          <div class="quality-panel">
+            <div class="quality-head">
+              <strong>AI quality evaluation</strong>
+              <span class="quality-status" id="qualityStatus">Awaiting result</span>
+            </div>
+
+            <div class="quality-stats">
+              <div class="quality-stat">
+                <b id="qualityTimeMetric">—</b>
+                <span>Quality-check time</span>
+              </div>
+
+              <div class="quality-stat">
+                <b id="qualityOverallMetric">—</b>
+                <span>Overall AI evaluation</span>
+              </div>
+            </div>
+
+            <div id="qualityDetails">
+              <div class="quality-score">
+                <div class="quality-score-row">
+                  <span>Purpose match</span>
+                  <strong id="purposeScore">—</strong>
+                </div>
+                <div class="quality-track">
+                  <div class="quality-fill" id="purposeBar"></div>
+                </div>
+              </div>
+
+              <div class="quality-score">
+                <div class="quality-score-row">
+                  <span>Tone match</span>
+                  <strong id="toneScore">—</strong>
+                </div>
+                <div class="quality-track">
+                  <div class="quality-fill" id="toneBar"></div>
+                </div>
+              </div>
+
+              <div class="quality-checks">
+                <div class="quality-check"><span>Grammar</span><span id="grammarStatus">—</span></div>
+                <div class="quality-check"><span>Spelling</span><span id="spellingStatus">—</span></div>
+                <div class="quality-check"><span>Readability</span><span id="readabilityStatus">—</span></div>
+                <div class="quality-check"><span>Unsupported claims</span><span id="claimsStatus">—</span></div>
+              </div>
+
+              <div class="quality-note" id="qualitySuggestions"></div>
+            </div>
+
+            <p class="quality-note">
+              Scores are AI-generated evaluation estimates, not independently verified correctness or factual-accuracy measurements.
+            </p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div class="footer">
+      MailMind AI · Node.js + Express.js · Gemini embeddings + Gemini LLM · RAG
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById('emailForm');
+    const generateBtn = document.getElementById('generateBtn');
+    const loader = document.getElementById('loader');
+    const errorBox = document.getElementById('error');
+    const result = document.getElementById('result');
+
+    let lastPayload = null;
+    let lastResponse = null;
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value ?? '';
+    }
+
+    function ms(value) {
+      return `${Number(value || 0).toLocaleString()} ms`;
+    }
+
+    function seconds(value) {
+      const number = Number(value);
+      return Number.isFinite(number)
+        ? `${(number / 1000).toFixed(2)} s`
+        : '—';
+    }
+
+    // Render AI quality evaluation
+    function renderQuality(quality, meta) {
+      const qualityTime = meta?.qualityCheckTimeMs;
+
+      setText(
+        'qualityTimeMetric',
+        qualityTime == null ? '—' : seconds(qualityTime)
+      );
+
+      if (!quality || typeof quality !== 'object') {
+        setText('qualityStatus', 'Unavailable');
+        setText('qualityOverallMetric', '—');
+
+        document.getElementById('qualityDetails').innerHTML =
+          '<div class="quality-unavailable">Email generated, but quality checking was unavailable.</div>';
+
+        return;
+      }
+
+      const purpose = Number(quality.purpose_match);
+      const tone = Number(quality.tone_match);
+
+      const validScores =
+        Number.isFinite(purpose) && Number.isFinite(tone);
+
+      // This is an estimated composite score, not factual accuracy.
+      const overall = validScores
+        ? Math.round((purpose + tone) / 2)
+        : null;
+
+      setText(
+        'qualityOverallMetric',
+        overall == null ? '—' : `${overall}%`
+      );
+
+      setText(
+        'qualityStatus',
+        quality.overall_status || 'Evaluated'
+      );
+
+      setText(
+        'purposeScore',
+        Number.isFinite(purpose) ? `${purpose}%` : '—'
+      );
+
+      setText(
+        'toneScore',
+        Number.isFinite(tone) ? `${tone}%` : '—'
+      );
+
+      document.getElementById('purposeBar').style.width =
+        `${Math.max(0, Math.min(100, Number.isFinite(purpose) ? purpose : 0))}%`;
+
+      document.getElementById('toneBar').style.width =
+        `${Math.max(0, Math.min(100, Number.isFinite(tone) ? tone : 0))}%`;
+
+      setText('grammarStatus', quality.grammar || 'Not checked');
+      setText('spellingStatus', quality.spelling || 'Not checked');
+      setText('readabilityStatus', quality.readability || 'Not checked');
+
+      const claims = Array.isArray(quality.unsupported_claims)
+        ? quality.unsupported_claims
+        : [];
+
+      setText(
+        'claimsStatus',
+        claims.length === 0 ? 'None found' : `${claims.length} flagged`
+      );
+
+      const suggestions = Array.isArray(quality.suggestions)
+        ? quality.suggestions
+        : [];
+
+      const claimText = claims.length
+        ? `Potential unsupported claims: ${claims.join(' · ')}`
+        : 'No unsupported claims were flagged.';
+
+      const suggestionText = suggestions.length
+        ? `Suggestions: ${suggestions.join(' · ')}`
+        : 'No improvement suggestions returned.';
+
+      setText('qualitySuggestions', `${claimText} ${suggestionText}`);
+    }
+
+    async function generate(payload, forceRefresh = false) {
+      lastPayload = payload;
+
+      errorBox.classList.remove('show');
+      loader.classList.add('show');
+
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Generating…';
+
+      try {
+        const response = await fetch('/api/emails/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...payload,
+              forceRefresh
+            })
+          });
+
+        const json = await response.json();
+
+        if (!response.ok || !json.success) {
+          throw new Error(json.message || 'Generation failed.');
+        }
+
+        lastResponse = json;
+
+        const data = json.data;
+        const meta = json.meta;
+
+        setText('subject', data.subject);
+        setText('body', data.body);
+        setText('contextSummary', data.contextSummary);
+
+        setText(
+          'modelLabel',
+          `${meta.model} · ${meta.embeddingModel}`
+        );
+
+        setText('retrievalMetric', ms(meta.retrievalTimeMs));
+        setText('generationMetric', ms(meta.generationTimeMs));
+        setText('totalMetric', ms(meta.totalAiTimeMs));
+
+        // Display the quality report from the backend response.
+        renderQuality(data.qualityCheck, meta);
+
+        const sources = document.getElementById('sources');
+        sources.replaceChildren();
+
+        (data.retrievedSources || []).forEach((source) => {
+          const card = document.createElement('div');
+          card.className = 'source';
+
+          const row = document.createElement('div');
+          row.className = 'source-row';
+
+          const title = document.createElement('span');
+          title.textContent = source.title;
+
+          const score = document.createElement('span');
+          score.className = 'score';
+          score.textContent =
+            `${(source.relevanceScore * 100).toFixed(1)}% match`;
+
+          const category = document.createElement('small');
+          category.textContent = source.category;
+
+          row.append(title, score);
+          card.append(row, category);
+          sources.append(card);
+        });
+
+        document.getElementById('empty').style.display = 'none';
+        result.classList.add('show');
+
+      } catch (error) {
+        errorBox.textContent = error.message;
+        errorBox.classList.add('show');
+
+      } finally {
+        loader.classList.remove('show');
+        generateBtn.disabled = false;
+        generateBtn.textContent = '✦ Generate with AI';
+      }
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      generate({
+        purpose: document.getElementById('purpose').value,
+        recipient_name: document.getElementById('recipient').value,
+        tone: document.getElementById('tone').value
+      });
+    });
+
+    document.getElementById('regenerateBtn').addEventListener('click', () => {
+        if (lastPayload) generate(lastPayload, true);
+      });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (!lastResponse) return;
+
+      await navigator.clipboard.writeText(
+        `Subject: ${lastResponse.data.subject}\n\n${lastResponse.data.body}`
+      );
+
+      document.getElementById('copyBtn').textContent = 'Copied!';
+    });
+
+    document.getElementById('copySubjectBtn').addEventListener('click', async () => {
+      if (!lastResponse) return;
+
+      await navigator.clipboard.writeText(lastResponse.data.subject);
+
+      document.getElementById('copySubjectBtn').textContent = 'Copied!';
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,42 @@
+{
+  "info": {
+    "name": "MailMind AI - RAG Email Intelligence",
+    "description": "Test the RAG-powered email generation endpoint.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" }
+  ],
+  "item": [
+    {
+      "name": "Generate Email (RAG)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"purpose\": \"Request an update about my job application after the final interview\",\n  \"recipient_name\": \"Priya\",\n  \"tone\": \"Professional and polite\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/emails/generate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "emails", "generate"]
+        }
+      }
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        }
+      }
+    }
+  ]
+}
